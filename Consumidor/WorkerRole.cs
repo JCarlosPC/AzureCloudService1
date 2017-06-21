@@ -89,7 +89,7 @@ namespace Consumidor
                 cloudQueue.DeleteMessage(cloudQueueMessage);
 
                 Trace.TraceInformation("Message removed from queue.");
-                await Task.Delay(5000);
+                await Task.Delay(10000);
             }
         }
     }

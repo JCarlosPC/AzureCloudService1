@@ -18,7 +18,8 @@ namespace Produtor
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
-        static CloudQueue cloudQueue;
+        static CloudQueue cloudQueue1;
+        static CloudQueue cloudQueue2;
         int count = 0;
 
         public override void Run()
@@ -74,21 +75,39 @@ namespace Produtor
             }
 
             var cloudQueueClient = cloudStorageAccount.CreateCloudQueueClient();
-            cloudQueue = cloudQueueClient.GetQueueReference("testqueue");
+            cloudQueue1 = cloudQueueClient.GetQueueReference("apiqueue");
+            cloudQueue2 = cloudQueueClient.GetQueueReference("testqueue");
 
-            cloudQueue.CreateIfNotExists();
+            cloudQueue1.CreateIfNotExists();
+            cloudQueue2.CreateIfNotExists();
 
             string MessageText = " - Here is a nice message!";
 
             // TODO: Replace the following with your own logic.
             while (!cancellationToken.IsCancellationRequested)
             {
-                var message = new CloudQueueMessage(count + MessageText); // concatenando contador na mensagem para facilitar visualização
-                cloudQueue.AddMessage(message);
+                //Adicionando a mensagem na apiqueue
+                var message1 = new CloudQueueMessage(count + MessageText); // concatenando contador na mensagem para facilitar visualização
+                cloudQueue1.AddMessage(message1);
                 count++;
 
+                await Task.Delay(5000);
+
+                //Removendo mensagem da apiqueue
+                var cloudQueueMessage = cloudQueue1.GetMessage();
+
+                if (cloudQueueMessage == null)
+                {
+                    return;
+                }
+
+                cloudQueue1.DeleteMessage(cloudQueueMessage);
+
+                //Adicionando a mensagem na testqueue
+                var message2 = new CloudQueueMessage(cloudQueueMessage.AsString);
+                cloudQueue2.AddMessage(message2);
+
                 Trace.TraceInformation("Message added to queue.");
-                await Task.Delay(2500);
             }
         }
     }
